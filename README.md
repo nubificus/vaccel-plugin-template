@@ -33,17 +33,19 @@ static int fini(void) {
 }
 ```
 
-- A definition of the `VACCEL_MODULE` with:
+- A definition of the `VACCEL_PLUGIN` with:
 
     - `.name` : The name of the plugin
     - `.version` : The version of the plugin
+    - `.vaccel_version` : the vAccel library version that the plugin was built against. 
     - `.init` : the function to call upon plugin initialization (eg. `init()`)
     - `.fini` : the function to call before unloading the plugin (eg. on program exit, `fini()`)
 
 ```C
-VACCEL_MODULE(
+VACCEL_PLUGIN(
         .name = "vAccel template plugin",
         .version = "0.9",
+	.vaccel_version = VACCEL_VERSION,
         .init = init,
         .fini = fini
 )
@@ -56,8 +58,8 @@ instance, the array could look like the following:
 
 ```C
 static struct vaccel_op ops[] = {
-	VACCEL_OP_INIT(ops[0], VACCEL_NO_OP, my_noop_function),
-	VACCEL_OP_INIT(ops[1], VACCEL_MINMAX, my_minmax_function),
+	VACCEL_OP_INIT(ops[0], VACCEL_OP_NOOP, my_noop_function),
+	VACCEL_OP_INIT(ops[1], VACCEL_OP_MINMAX, my_minmax_function),
 };
 ```
 where
@@ -65,7 +67,7 @@ where
 ```C
 struct vaccel_op {
 	/* operation type */
-	uint8_t type;
+	vaccel_op_type_t type;
 
 	/* function implementing the operation */
 	void *func;
@@ -74,9 +76,12 @@ struct vaccel_op {
 };
 ```
 
+#### vAccel main library
+Before building a vAccel plugin, we should install the main vAccel library. Instructions on how to build vAccel can be found [here](https://docs.vaccel.org/quickstart/).
+
 #### building a vAccel plugin
 
-We can build a simple vAccel plugin that implements the `NOOP` user API
+Now we can build a simple vAccel plugin that implements the `NOOP` user API
 operation with our own custom function.
 
 First let's clone the repo:
@@ -85,34 +90,31 @@ First let's clone the repo:
 git clone https://github.com/nubificus/vaccelrt-plugin-template
 ```
 
-Let's get the vaccelrt code base (submodule):
+We also need to install the following packages:
 
 ```bash
-git submodule update --init --recursive
+sudo apt-get install build-essential ninja-build pkg-config python3-pip 
+sudo pip install meson
 ```
 
-then let's create the build environment:
+And we use `meson` to prepare the `build` directory:
 
 ```bash
-mkdir build
-cd build
-cmake ../
+meson setup build
 ```
 
-and let's look into `../src/vaccel.c`:
+Let's look into `./src/vaccel.c`:
 
 ```C {.line-numbers}
 #include <stdio.h>
 
 #include <vaccel.h> /* needed for vAccel specific structures (eg Session */
-#include <plugin.h> /* needed for register_plugin_functions */
 
 /* A function that will be mapped to a vAccel User API operation using
  * register_plugin_functions() */
 static int my_noop_function(struct vaccel_session *sess)
 {
-        fprintf(stderr, "[my noop function] session: %d\n", sess->session_id);
-
+        fprintf(stderr, "[my noop function] session: %" PRId64 "\n", sess->id);
         return VACCEL_OK;
 }
 
@@ -126,7 +128,7 @@ static int init(void)
 {
         /* This is where the static function above `my_noop_function()`
          * gets mapped to the relevant vAccel User API operation. */
-        return register_plugin_functions(ops, sizeof(ops) / sizeof(ops[0]));
+        return vaccel_plugin_register_ops(ops, sizeof(ops) / sizeof(ops[0]));
 }
 
 /* The fini() function, called before unloading the plugin */
@@ -135,27 +137,28 @@ static int fini(void)
         return VACCEL_OK;
 }
 
-VACCEL_MODULE(
+VACCEL_PLUGIN(
         .name = "vAccel template plugin",
         .version = "0.9",
+	.vaccel_version = VACCEL_VERSION,
         .init = init,
         .fini = fini
 )
 ```
 
 The plugin registers `my_noop_function()` to serve as the implementation of the
-`VACCEL_NO_OP` API operation. To build it, use:
+`VACCEL_OP_NOOP` API operation. To build it, use:
 
 ```
-make
+meson compile -C build
 ```
 
-in the build directory we prepared above.
+The plugin should have been created into `./build/src/`.
 
 The output is a shared object (`libvaccel-template.so`). 
 
-To be used as a plugin, you need to specify it in the env variable
-`VACCEL_BACKENDS` when running your vAccel application. 
+To be used as a plugin, you need to specify it in the environment variable
+`VACCEL_PLUGINS` when running your vAccel application. 
 
 See [Running a vAccel
 application](https://docs.vaccel.org/build_run_app/#running-a-vaccel-application)
