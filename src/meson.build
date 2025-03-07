@@ -1,5 +1,4 @@
 plugin_headers = files([
-  'pynq.h',
 ])
 
 plugin_sources = files([
