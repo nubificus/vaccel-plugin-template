@@ -1,6 +1,8 @@
-#include <stdio.h>
+// SPDX-License-Identifier: Apache-2.0
 
-#include <vaccel.h> /* needed for vAccel specific structures (eg Session */
+#include <inttypes.h>
+#include <stdio.h>
+#include <vaccel.h> /* header with vAccel API */
 
 /* A function that will be mapped to a vAccel User API operation using
  * register_plugin_functions() */
@@ -30,10 +32,5 @@ static int fini(void)
 	return VACCEL_OK;
 }
 
-VACCEL_PLUGIN(
-	.name = "vAccel template plugin",
-	.version = "0.9",
-	.vaccel_version = VACCEL_VERSION,
-	.init = init,
-	.fini = fini
-)
+VACCEL_PLUGIN(.name = "template", .version = "0.9",
+	      .vaccel_version = VACCEL_VERSION, .init = init, .fini = fini)
