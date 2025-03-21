@@ -132,6 +132,7 @@ operation with our own custom function.
 First clone the repo:
 ```bash
 git clone https://github.com/nubificus/vaccel-plugin-template
+cd vaccel-plugin-template
 ```
 
 Use `meson` to prepare the `build` directory:
@@ -150,5 +151,5 @@ To be used as a plugin, we need to select it using the environment variable
 (ie. `VACCEL_PLUGINS=/path/to/libvaccel-template.so`).
 
 See [Running a vAccel
-application](https://docs.vaccel.org/build_run_app/#running-a-vaccel-application)
+application](https://docs.vaccel.org/user-guide/build-run-app/#running-a-vaccel-application)
 for more info.
